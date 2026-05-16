@@ -1,0 +1,70 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# CI / IDE
+.github
+.idea
+.vscode
+.editorconfig
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+env
+.eggs
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+.tox
+
+# Local data
+postgres_data
+redis_data
+metabase_data
+*.sqlite
+*.db
+/tmp
+
+# Eval reports + uploads (regenerated at runtime)
+evals/reports
+chatbot-uploads
+chatbot-images
+
+# Docs / build artifacts
+*.tar.gz
+*.zip
+dist
+build
+docs/_build
+
+# Secrets — NEVER bake into image
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled translations / Babel
+*.mo
+
+# Logs
+*.log
+logs
+
+# Tests output
+.test-results
+coverage.xml

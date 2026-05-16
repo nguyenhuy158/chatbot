@@ -1,0 +1,74 @@
+# Multilingual / memory / direct knowledge questions.
+
+- id: ml_mix_vn_en_001
+  category: multilang
+  role: external
+  lang: vi
+  query: "Cho tôi biết về Python decorator là gì? Trả lời bằng tiếng Việt nha"
+  expected_keywords: [decorator, hàm, Python]
+
+- id: ml_en_001
+  category: multilang
+  role: external
+  lang: en
+  query: Explain what REST API is in simple terms
+  expected_keywords: [REST, HTTP, API, resource]
+
+- id: ml_vn_001
+  category: multilang
+  role: external
+  lang: vi
+  query: Sự khác nhau giữa SQL và NoSQL là gì?
+  expected_keywords: [SQL, NoSQL, quan hệ, schema]
+
+- id: ml_vn_002
+  category: multilang
+  role: external
+  lang: vi
+  query: Docker và Kubernetes khác nhau thế nào?
+  expected_keywords: [Docker, Kubernetes, container, orchestration]
+
+- id: memory_pref_001
+  category: memory
+  role: external
+  lang: vi
+  query: Sau này trả lời tôi luôn ngắn gọn nha, đừng dài dòng
+  expected_keywords: [được, ok, ghi nhớ]
+  notes: Should trigger save_memory with type=preference.
+
+- id: memory_factual_001
+  category: memory
+  role: internal
+  lang: vi
+  query: Tôi đang làm dự án Farmnet, sau này tôi hỏi liên quan đến Farmnet thì biết nha
+  expected_keywords: [Farmnet, ghi nhớ, được]
+  notes: Should save context-type memory.
+
+- id: memory_recall_001
+  category: memory
+  role: external
+  lang: vi
+  query: Tôi tên gì?
+  expected_refuses: false
+  notes: If memory has been seeded with user's name, should recall. Otherwise say don't know.
+
+- id: ml_mixed_002
+  category: multilang
+  role: external
+  lang: en
+  query: What is the difference between async and threading in Python?
+  expected_keywords: [async, thread, GIL, concurrency]
+
+- id: ml_vn_003
+  category: multilang
+  role: external
+  lang: vi
+  query: Lập trình hàm là gì? Có ưu điểm gì so với OOP?
+  expected_keywords: [hàm, immutable, side effect]
+
+- id: ml_en_002
+  category: multilang
+  role: external
+  lang: en
+  query: Best practices for writing clean Python code?
+  expected_keywords: [PEP, readable, function, naming]

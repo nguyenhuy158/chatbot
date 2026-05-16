@@ -1,0 +1,72 @@
+# FAQ-style queries that should be answered from public_docs / faq collection.
+# Adjust expected_keywords to match the actual content of your ingested FAQ docs.
+
+- id: faq_vn_001
+  category: faq
+  role: external
+  lang: vi
+  query: Làm sao để đổi mật khẩu?
+  expected_keywords: [mật khẩu, password, cài đặt, settings]
+
+- id: faq_vn_002
+  category: faq
+  role: external
+  lang: vi
+  query: Tôi quên mật khẩu, làm sao lấy lại?
+  expected_keywords: [quên, mật khẩu, email, khôi phục]
+
+- id: faq_vn_003
+  category: faq
+  role: external
+  lang: vi
+  query: Chính sách hoàn tiền của công ty ra sao?
+  expected_keywords: [hoàn tiền, refund, chính sách, ngày]
+
+- id: faq_vn_004
+  category: faq
+  role: external
+  lang: vi
+  query: Giờ làm việc của tổng đài là khi nào?
+  expected_keywords: [giờ làm việc, hotline, tổng đài]
+
+- id: faq_vn_005
+  category: faq
+  role: external
+  lang: vi
+  query: Tôi muốn liên hệ chăm sóc khách hàng
+  expected_keywords: [liên hệ, hỗ trợ, email, hotline]
+
+- id: faq_en_001
+  category: faq
+  role: external
+  lang: en
+  query: How do I reset my password?
+  expected_keywords: [reset, password, email, settings]
+
+- id: faq_en_002
+  category: faq
+  role: external
+  lang: en
+  query: What is your refund policy?
+  expected_keywords: [refund, policy, days, return]
+
+- id: faq_en_003
+  category: faq
+  role: external
+  lang: en
+  query: How can I contact customer support?
+  expected_keywords: [contact, support, email, hotline]
+
+- id: faq_vn_006
+  category: faq
+  role: external
+  lang: vi
+  query: Phương thức thanh toán nào được chấp nhận?
+  expected_keywords: [thanh toán, thẻ, chuyển khoản, ví]
+
+- id: faq_vn_007
+  category: faq
+  role: external
+  lang: vi
+  query: Tôi có thể hủy đơn hàng không?
+  expected_keywords: [hủy, đơn hàng, thời hạn]

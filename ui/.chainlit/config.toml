@@ -1,0 +1,53 @@
+# Chainlit config — see https://docs.chainlit.io/customisation/config
+
+[project]
+# Whether to enable telemetry (default: true). No personally identifiable info
+# is collected.
+enable_telemetry = false
+
+# List of environment variables to be provided by each user to use the app
+user_env = []
+
+# Duration (in seconds) during which the session is saved when the connection is lost
+session_timeout = 3600
+
+# Hide the chain of thought details from the user in the UI
+hide_cot = true
+
+# Link to your github repo. This will add a github button in the UI's header.
+# github = ""
+
+[features]
+# Enable file upload — users can drag-drop PDFs/images/etc.
+[features.spontaneous_file_upload]
+    enabled = true
+    accept = ["application/pdf", "image/*", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "text/markdown"]
+    max_files = 5
+    max_size_mb = 10
+
+# Authorize users to send images, PDFs from the chat
+[features.audio]
+    # Disable for MVP
+    enabled = false
+
+# Show a multi-modal toggle
+multi_modal = true
+
+[UI]
+# Name of the app and chatbot
+name = "AI Chatbot"
+
+# Description (used as meta tag)
+description = "Multi-purpose AI assistant with RAG, memory, and tools"
+
+# Show a default collapsed message at the start of the conversation
+default_collapse_content = true
+
+# Hide the chain of thought
+hide_cot = true
+
+# Show a watermark in the UI
+# watermark = ""
+
+[meta]
+generated_by = "phase-1.5-chainlit"

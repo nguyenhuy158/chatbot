@@ -1,0 +1,81 @@
+# Tool-using queries — these should trigger specific tools.
+
+- id: tool_time_vn_001
+  category: tools
+  role: external
+  lang: vi
+  query: Bây giờ là mấy giờ ở Tokyo?
+  expected_uses_tool: get_current_time
+  expected_keywords: [giờ, Tokyo]
+
+- id: tool_time_en_001
+  category: tools
+  role: external
+  lang: en
+  query: What time is it in New York right now?
+  expected_uses_tool: get_current_time
+  expected_keywords: [time, New York]
+
+- id: tool_calc_vn_001
+  category: tools
+  role: external
+  lang: vi
+  query: Tính giúp tôi 12345 chia 67 bằng bao nhiêu, làm tròn 2 chữ số
+  expected_uses_tool: calculator
+  expected_keywords: ["184"]
+
+- id: tool_calc_en_001
+  category: tools
+  role: external
+  lang: en
+  query: What is the square root of 2025?
+  expected_uses_tool: calculator
+  expected_keywords: ["45"]
+
+- id: tool_search_vn_001
+  category: tools
+  role: external
+  lang: vi
+  query: Tin tức mới nhất về AI tuần này có gì?
+  expected_uses_tool: web_search
+  expected_keywords: [AI]
+
+- id: tool_search_en_001
+  category: tools
+  role: external
+  lang: en
+  query: Latest news on OpenAI this week
+  expected_uses_tool: web_search
+  expected_keywords: [OpenAI]
+
+- id: tool_search_vn_002
+  category: tools
+  role: external
+  lang: vi
+  query: Giá vàng SJC hôm nay bao nhiêu?
+  expected_uses_tool: web_search
+  expected_keywords: [vàng, SJC]
+
+- id: tool_calc_vn_002
+  category: tools
+  role: external
+  lang: vi
+  query: 365 * 24 * 60 = ?
+  expected_uses_tool: calculator
+  expected_keywords: ["525600"]
+
+- id: tool_date_vn_001
+  category: tools
+  role: external
+  lang: vi
+  query: Hôm nay là thứ mấy, ngày bao nhiêu?
+  expected_uses_tool: get_current_time
+  expected_keywords: [thứ, ngày]
+
+- id: tool_search_en_002
+  category: tools
+  role: external
+  lang: en
+  query: Who won the Nobel Peace Prize this year?
+  expected_uses_tool: web_search
+  expected_keywords: [Nobel, Peace]
