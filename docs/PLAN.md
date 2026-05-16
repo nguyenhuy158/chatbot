@@ -758,3 +758,97 @@ M0 task: audit each file, classify with marker (unit / integration / e2e), fix b
 - M3: bump to 80%. Diff-cover warn.
 - M4: eval workflow blocks PR per Part E.4. Diff-cover blocks.
 - M7+: load + chaos drills on staging before tag release.
+
+---
+
+## Part I — Errata (post-review 2026-05-16)
+
+Advisor review surfaced 4 blocking contradictions + 6 non-blocking gaps. Resolutions applied below; original decision rows kept above for audit trail.
+
+### I.1 Blocking fixes (user-resolved)
+
+**I.1.1 gcal tool ↔ magic-link auth mismatch** (Decision #11 vs #17)
+- Original #17: `gcal (read/create event)` implied per-user OAuth → conflicts with #11 (magic-link only, no Google OAuth).
+- **Resolved:** `gcal_event` uses **service account** with **one shared calendar** (read + write). No per-user OAuth path.
+- Impact on E.3: drop `OAuth scope calendar.events` line; replace with "service account JSON in SOPS-encrypted `secrets/prod.enc.yaml`; calendar id `chatbot-shared@…` set via env."
+- Tool authz unchanged (viewer/moderator/admin matrix still applies — service account is the executor, RBAC gates *who can ask*).
+
+**I.1.2 Eval gate cadence** (Decision #12 vs H.2)
+- Original #12: "Block PR when any metric drops > 5%"; H.2: nightly + label-only. Inconsistent.
+- **Resolved:** **Eval runs on every PR.** Within $50/mo budget (~$20/mo est at $1/run × ~20 PR/mo).
+- Update H.2 trigger: `pull_request` (not `schedule`). Keep `workflow_dispatch` for manual reruns. Drop `run-eval` label gating.
+- Keep $1 cost cap per run (Decision #41). Cron-nightly removed.
+- Override mechanism unchanged: `eval-override` PR label + reason (audit logged).
+
+**I.1.3 VPS sizing reality check** (Decision #9 vs E.7)
+- Original #9 says 2vCPU/4GB; E.7 resource table sums to ~4.7 vCPU / 9.6 GB. Over budget.
+- **Resolved:** **Keep VPS 2vCPU/4GB.** Switch Decision #20 telemetry from **Langfuse self-host → Langfuse cloud free tier**.
+- E.7 resource table revised (remove langfuse + clickhouse rows):
+  - postgres: 0.75 vCPU, 1.5 GB
+  - redis: 0.25 vCPU, 256 MB
+  - qdrant: 0.5 vCPU, 1 GB
+  - app: 0.5 vCPU × 2 replicas = 1 vCPU, 1 GB total
+  - caddy: 0.1 vCPU, 64 MB
+  - **Sum: ~2.1 vCPU, ~3.8 GB** — fits 2vCPU/4GB with overcommit OK on pilot load.
+- Langfuse cloud free tier limits (50k obs/mo) sufficient for < 500 msg/day.
+- DPA: add Langfuse to F.3 DPA checklist (EU-hosted, GDPR-compliant per their docs — verify before sending data).
+
+**I.1.4 Right-to-delete vs 90d backup** (Decision #14, #15, F.2)
+- Original: live data anonymized 30d but backups retained 90d → user delete request can't reach backup tape.
+- **Resolved:** **Live-only delete.** Backups expire on natural 90d cycle. Disclose explicitly in privacy.md.
+- F.2 privacy.md MUST include clause: "Deletion requests apply to live production data and search indexes. Encrypted backups expire on a 90-day rolling cycle and are not selectively edited; deleted data persists in cold backups until that cycle completes, after which it is unrecoverable."
+- No restore-then-redact procedure (cost+risk > benefit at pilot scale).
+
+### I.2 Non-blocking gaps (errata)
+
+**I.2.1 Qdrant snapshot in backup plan** — Decision #15 amendment.
+- Add: Qdrant snapshot daily via `POST /collections/{name}/snapshots` → S3 alongside Postgres dump. Same 90d retention, same age-encryption.
+- Restore drill (quarterly) covers both PG dump + Qdrant snapshot.
+
+**I.2.2 mypy strict scope** — E.0 pre-commit.
+- M0 scope: `app/core/` + `app/services/` strict only. Other modules: mypy non-strict (basic check).
+- Expand strict per milestone: M2 adds `app/rag/`; M3 adds `app/agent/` + `app/memory/`; M5 adds `app/channels/`; M6 adds `app/api/`. Track in `pyproject.toml` `[tool.mypy.overrides]`.
+
+**I.2.3 CI secrets policy** — new section in Part H.
+- GH Actions encrypted repo secrets:
+  - `GEMINI_API_KEY` (eval workflow only, scoped via environment `eval`)
+  - `OPENAI_API_KEY` (eval workflow only, env `eval`)
+  - `DEPLOY_SSH_KEY` (deploy workflow only, env `prod`)
+  - `GHCR_PAT` (deploy workflow only)
+  - `SOPS_AGE_KEY` (deploy workflow, for decrypting `prod.enc.yaml` server-side)
+- Environment protection rules: `eval` env requires no approval; `prod` env requires manual approve from `huyntq`.
+- Rotate quarterly per Decision #2 secret-rotation cadence. Runbook: `docs/runbooks/secrets.md`.
+- Never echo secrets in logs; CI step `if: failure()` must not dump env.
+
+**I.2.4 Embedding dim verification** — E.2 task before M2.
+- Verify `app/rag/embedder.py` + Alembic `0002_rag_fields.py` use **768** (text-embedding-004), not 1536 (OpenAI ada-002 default).
+- If mismatch: schema migration before any ingest. Add `embedding_dim` column to `document_chunks` for future migration tracking.
+- Audit task: M0 exit checklist.
+
+**I.2.5 Budget hard-cap enforcement** — F.4 spec.
+- Daily cron job `app/workers/budget_guard.py`:
+  - Query `SELECT SUM(cost_usd) FROM usage_events WHERE ts >= date_trunc('month', now())`.
+  - If month-to-date > $40 (80% of $50 cap): set feature flag `llm.model.primary = gemini-2.0-flash` (downgrade); page admin via email + Slack.
+  - If month-to-date > $50: set flag `chat.maintenance_mode = true`; page admin SEV1.
+- Flag flips logged to `admin_audit` with actor = `system:budget_guard`.
+- Reset on month rollover (cron re-evaluates against next month).
+
+**I.2.6 Email enumeration leak** — E.1 magic-link spec.
+- `POST /auth/request` MUST return identical `200 OK {"sent": true}` regardless of:
+  - Email exists in allowlist or not.
+  - Email is on bounce-suppression list or not.
+  - Rate limit triggered (return 200 but skip send; log internally).
+- Only send actual email if allowlisted + not suppressed + within rate.
+- Token verify endpoint `POST /auth/verify` returns generic "invalid or expired" on any failure (no distinction).
+
+### I.3 Updated decision deltas (supersede where conflicting)
+
+| # | Field | Old | New |
+|---|-------|-----|-----|
+| 12 | Eval gate cadence | Block PR + nightly | **Run on every PR (within budget)** |
+| 17 | gcal auth | OAuth scope | **Service account, single shared calendar** |
+| 20 | Telemetry hosting | Langfuse self-host | **Langfuse cloud free tier** |
+| 14 | Retention vs delete | (unspecified) | **Live-only delete; backups expire 90d natural cycle; disclosed in privacy.md** |
+| 15 | Backup scope | Postgres only | **Postgres + Qdrant snapshot, daily, 90d** |
+
+Errata ratified. Proceed to Part G pre-M0 deliverables.
