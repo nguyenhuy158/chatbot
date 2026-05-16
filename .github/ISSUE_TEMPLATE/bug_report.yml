@@ -1,0 +1,64 @@
+name: Bug report
+description: Something is broken or behaving incorrectly
+title: "[bug] "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Do not include secrets, tokens, or private data.
+        For security issues, use the private advisory link instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence describing the bug.
+      placeholder: e.g. /api/chat returns 500 when message contains emoji
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Minimal steps. Include curl command, payload, or UI flow.
+      placeholder: |
+        1. Login via Google OAuth
+        2. POST /api/chat with body { "message": "🚀" }
+        3. Observe 500
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include stack trace, log snippet, or screenshot. Redact secrets.
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Commit SHA
+      description: Output of `git rev-parse --short HEAD`
+    validations:
+      required: true
+  - type: dropdown
+    id: env
+    attributes:
+      label: Environment
+      options:
+        - local-dev
+        - staging
+        - production
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: OS, Python version, Docker version, related issues.

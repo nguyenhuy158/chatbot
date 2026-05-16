@@ -1,0 +1,12 @@
+# Default owner — required reviewer for any change
+*       @nguyenhuy158
+
+# Critical areas — owner must review
+/app/core/security.py       @nguyenhuy158
+/app/guardrails/            @nguyenhuy158
+/alembic/                   @nguyenhuy158
+/docker/                    @nguyenhuy158
+/docker-compose.prod.yml    @nguyenhuy158
+/.github/                   @nguyenhuy158
+/LICENSE                    @nguyenhuy158
+/SECURITY.md                @nguyenhuy158

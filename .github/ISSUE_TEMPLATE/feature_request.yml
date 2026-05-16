@@ -1,0 +1,46 @@
+name: Feature request
+description: Propose a new feature or enhancement
+title: "[feat] "
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or operator pain are you solving? Avoid jumping to a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Sketch the approach. Link to architecture doc section if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Roadmap milestone
+      description: See `docs/ROADMAP.md`
+      options:
+        - M0 Bootstrap
+        - M1 Core chat
+        - M2 RAG
+        - M3 Agent + memory
+        - M4 Eval gate
+        - M5 Channels
+        - M6 Admin + analytics
+        - M7 Prod deploy
+        - M8 Observability
+        - Other / unscheduled
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact / risk
+      description: User impact, breaking changes, security/privacy implications, cost.

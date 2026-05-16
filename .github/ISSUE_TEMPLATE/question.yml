@@ -1,0 +1,17 @@
+name: Question
+description: Ask about usage, behavior, or design
+title: "[question] "
+labels: [question]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Check `docs/` and `README.md` first.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What you tried, what you read, what's still unclear.
