@@ -646,3 +646,115 @@ Before touching code:
 9. Pick allowlist of pilot user emails
 
 Then M0 starts.
+
+---
+
+## Part H — Test + CI strategy (locked)
+
+### H.1 Test layers + markers
+
+| Layer | Marker | Scope | Where it runs |
+|---|---|---|---|
+| Unit | (none) | Pure logic, no I/O. Mocks for all externals. | Every push (parallel via `pytest-xdist`) |
+| Integration | `integration` | Real Postgres + Redis + Qdrant via GH `services:` / testcontainers. Mocked LLM via `respx`. | Every push |
+| E2E | `e2e` | Full FastAPI app via ASGI transport. All services real. LLM still mocked. | Every push |
+| Eval (golden) | `eval` | LLM quality on golden YAMLs. Real LLM calls. Costs money. | Nightly cron + PR label `run-eval` |
+| Load | (manual) | k6 RPS + soak | Pre-release manual |
+| Chaos | (manual) | Failure injection drills | Pre-release manual |
+
+`pyproject.toml`:
+```toml
+[tool.pytest.ini_options]
+markers = [
+  "integration: needs DB/Redis/Qdrant",
+  "e2e: full app boot",
+  "slow: > 5s",
+  "eval: LLM quality, costs money",
+]
+addopts = "-ra --strict-markers --strict-config"
+```
+
+### H.2 CI workflow (`.github/workflows/ci.yml`)
+
+Jobs (parallel where possible):
+
+- **lint** — ruff check + ruff format --check + mypy --strict app/
+- **unit** — `pytest -m "not integration and not e2e and not eval" -n auto`
+- **integration** — Postgres + Redis as GH services, Qdrant via testcontainers; `pytest -m integration`
+- **e2e** — same services + Qdrant; `pytest -m e2e`
+- **security** — trivy fs (HIGH+/CRITICAL fail), pip-audit, detect-secrets scan
+- **coverage** — aggregate from unit + integration + e2e; upload Codecov; diff-cover gate
+
+Required for merge to main: lint, unit, integration, e2e, security, coverage (diff threshold).
+
+Separate workflow `eval.yml`:
+- Trigger: `schedule: cron '0 17 * * *'` (00:00 VN) + `workflow_dispatch` + PR label `run-eval`
+- Budget: $1/run (Gemini Flash only)
+- Output: per-metric scores compared to baseline → fail if threshold breached
+
+### H.3 Coverage targets
+
+- Overall: **80% line, 70% branch** on `app/`
+- Per-module floor (in `.coveragerc`):
+  - `app/core/`, `app/guardrails/`, `app/memory/pii.py` → **90%**
+  - `app/services/` → **85%**
+  - `app/api/`, `app/agent/` → **75%**
+  - `app/channels/`, `app/workers/` → **70%**
+- Exclude: `app/main.py`, `alembic/versions/`, `__init__.py`, generated code
+- Diff-coverage on PR: new code ≥ **85%**, else warn (block at M4)
+- Upload: Codecov (private repo paid; if cost issue → self-host Codecov-CE or use GH artifact)
+
+### H.4 Fixture strategy (`tests/conftest.py`)
+
+- Session-scoped: app instance, async engine
+- Function-scoped: DB transaction + savepoint rollback per test (no truncate, no flake)
+- Faker for synthetic users, conversations, documents
+- `respx` to mock outbound HTTP (Gemini, OpenAI, Tavily, Postmark, Resend, Slack, Telegram)
+- LLM mocks: recorded fixtures in `tests/fixtures/llm/*.json` — playback via custom `MockLLMGateway`
+- No real LLM calls outside `eval` marker
+
+### H.5 Services in CI
+
+GH Actions `services:` for Postgres 16, Redis 7. Health-check gated.
+
+Qdrant: testcontainers-python (no official GH service image). Spin-up cost ~5s; worth it for true integration.
+
+Langfuse + Caddy: NOT in CI (mocked via respx). E2E only checks app boundary.
+
+### H.6 Mocking LLM in tests
+
+- Default: `respx` intercepts Gemini + OpenAI HTTP calls
+- Recorded responses in `tests/fixtures/llm/`
+- Tests assert prompt structure (count messages, role order, system prompt presence) — not exact text
+- Update fixtures via `RECORD_LLM=1 pytest tests/...` (recorder mode hits real API once, writes fixture)
+- Fixtures committed; reviewer checks diff for sanity
+
+### H.7 Decisions (locked)
+
+| # | Decision | Chosen |
+|---|----------|--------|
+| 34 | Coverage target | 80% line / 70% branch + per-module floors |
+| 35 | Diff-cover threshold | 85% (warn pre-M4, block at M4) |
+| 36 | Codecov | Codecov SaaS (free tier first; switch to self-host if private cost) |
+| 37 | Eval cadence | Nightly cron + PR label + workflow_dispatch |
+| 38 | Qdrant in CI | testcontainers-python |
+| 39 | LLM mocking | respx + recorded fixtures + record mode env var |
+| 40 | Test parallelism | pytest-xdist `-n auto` for unit only (integration/e2e serial to avoid DB races) |
+| 41 | Eval cost cap per CI run | $1 USD (Gemini Flash) |
+
+### H.8 Pilot test inventory (existing tests/ — needs alignment)
+
+Existing files (untouched yet):
+- `test_smoke.py` → expand to cover startup + 3 service pings (E.0)
+- `test_analytics.py`, `test_channels.py`, `test_eval.py`, `test_guardrails.py`, `test_i18n.py`, `test_memory.py`, `test_quota.py`, `test_rag.py`, `test_tools_cache.py`, `test_ui.py`
+
+M0 task: audit each file, classify with marker (unit / integration / e2e), fix broken imports, get suite green or skip-with-reason.
+
+### H.9 Rollout
+
+- M0: lint + unit + smoke (integration optional). Coverage upload + threshold warn-only.
+- M1: integration + e2e green. Coverage threshold enforced at 70%.
+- M2: bump coverage threshold to 75%.
+- M3: bump to 80%. Diff-cover warn.
+- M4: eval workflow blocks PR per Part E.4. Diff-cover blocks.
+- M7+: load + chaos drills on staging before tag release.
